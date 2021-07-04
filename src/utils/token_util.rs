@@ -8,6 +8,7 @@ use actix_web::{
     },
 };
 use reqwest;
+use chrono::{Duration, TimeZone, Utc};
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{decode, decode_header, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use std::error::Error;
@@ -50,8 +51,10 @@ pub fn validate_google_id_token(token: &str) -> Result<GoogleClaims, ServiceErro
     Ok(token_data.claims)  
 }
 
-pub fn generate_jwt(email: &String) -> Result<String, ServiceError>{
-    let claims = Claims { sub: email.to_owned(), exp: 10000000000 };
+pub fn generate_jwt(sub: &String) -> Result<String, ServiceError>{
+    let iat = Utc::now();
+    let exp = iat + chrono::Duration::days(1);
+    let claims = Claims::new(sub.to_owned(), iat, exp);
     match encode(&Header::default(), &claims, &EncodingKey::from_secret(JWT_KEY)) {
         Ok(t) => Ok(t),
         Err(error) => Err(ServiceError::InternalServerError("Error generating jwt: ".to_string() + &error.to_string()))

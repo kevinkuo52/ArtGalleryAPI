@@ -1,13 +1,16 @@
 
-use elasticsearch::{Elasticsearch, IndexParts, GetParts};
+use elasticsearch::{Elasticsearch, IndexParts, SearchParts};
 
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::sync::Arc;
 use crate::repositories::credential_repo_i::CredentialRepo;
-use crate::models::auth::{
-    Credential,
-    CredentialES
+use crate::models::{
+    auth::{
+        Credential,
+        CredentialES
+    },
+    elastic_res::{SearchResES, DocES}
 };
 use crate::models::error::ServiceError;
 use actix_web::{
@@ -26,7 +29,7 @@ impl CredentialRepo for CredentialRepoImpl {
 
     async fn save_credential(self: &Self, credential: &Credential) -> Result<(), ServiceError> {
         let result = self.elastic_client
-            .index(IndexParts::IndexId("credential", &credential.email))
+            .index(IndexParts::Index("credential"))
             .body(json!(credential))
             .send()
             .await;
@@ -40,22 +43,33 @@ impl CredentialRepo for CredentialRepoImpl {
         }
     }
 
-    async fn get_credential(self: &Self, email: &String) -> Result<Credential, ServiceError> {
+    async fn get_credential(self: &Self, email: &String) -> Result<DocES<Credential>, ServiceError> {
          let result = self.elastic_client
-            .get(GetParts::IndexId("credential", email))
+            .search(SearchParts::Index(&["credential"]))
+            .body(json!({
+                "query": {
+                    "term": {
+                        "email": {
+                            "value": email,
+                        }
+                    }
+                }
+            }))
             .send()
             .await;
         let response = match result {
             Ok(res) => res,
-            Err(error) => return Err(ServiceError::InternalServerError(error.to_string())),
+            Err(error) => return Err(ServiceError::InternalServerError(
+                "ES get credential error: ".to_string() + &error.to_string()
+            )),
         };
         // print!("repo before match");
         // match response.text().await {
         //     Ok(r) => print!("{}",r),
         //     Err(error) => return Err(ServiceError::InternalServerError(error.to_string())),
         // };
-        match response.json::<CredentialES>().await {
-            Ok(r) => Ok(r._source),
+        match response.json::<SearchResES<Credential>>().await {
+            Ok(r) => Ok(r.hits.hits[0].clone()),
             Err(error) => return Err(ServiceError::InternalServerError(error.to_string())),
         }
     }

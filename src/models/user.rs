@@ -10,6 +10,7 @@ use serde::{Serialize, Deserialize};
 pub struct User {
     pub email: String,
     pub username: String,
+    
 }
 
 

@@ -40,20 +40,20 @@ impl <'a, C>AuthService for AuthServiceImpl<'a, C> where C: CredentialRepo + Syn
         return self.credential_repo.save_credential(&credential).await;
     }
 
-    async fn verify_password(self: &Self, req: &LoginReq) -> Result<bool, ServiceError> {
+    async fn verify_password(self: &Self, req: &LoginReq) -> Result<String, ServiceError> {
         let credential = self.credential_repo.get_credential(&req.email).await?;
-        let parsed_hash = match PasswordHash::new(&credential.hashed_password){
+        let parsed_hash = match PasswordHash::new(&credential._source.hashed_password){
             Ok(h) => h,
             Err(error) => return Err(ServiceError::UnauthorizedError(error.to_string()))
         };
-        return Ok(self.argon2.verify_password(req.password.as_bytes(), &parsed_hash).is_ok());
+        match self.argon2.verify_password(req.password.as_bytes(), &parsed_hash).is_ok(){
+            true => Ok(credential._id),
+            false => Err(ServiceError::UnauthorizedError("Incorrect username or password".to_string()))
+        }
     }
 
     async fn authenticate(self: &Self, token: &Token) -> Option<String> {
         // self.token_repo.get_username_by_token(token).await
         return None;
     }
-
-   
-
 }

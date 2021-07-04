@@ -26,10 +26,8 @@ use actix_web::web::Json;
 
 pub fn configure<T: 'static + AuthService>(service: web::Data<T>, cfg: &mut web::ServiceConfig) {
     cfg.app_data(service);
-    cfg.route("/register", web::post().to(register::<T>));
-    cfg.route("/login", web::post().to(login::<T>));
-    cfg.route("/logout", web::post().to(logout));
-    cfg.route("/auth", web::get().to(auth));
+    cfg.route("/user", web::get().to(register::<T>));
+    cfg.route("/user", web::post().to(login::<T>));
 }
 
 async fn register<T: AuthService>(service: web::Data<T>, body: Json<RegistrationReq>) -> Result<HttpResponse, ServiceError>  {
@@ -42,8 +40,12 @@ async fn register<T: AuthService>(service: web::Data<T>, body: Json<Registration
 
 async fn login<T: AuthService>(service: web::Data<T>, body: Json<LoginReq>) -> Result<HttpResponse, ServiceError> {
     // session.set("login", true).unwrap();
-    let id = service.verify_password(&body).await?;
-    let token = token_util::generate_jwt(&id)?;
+    let _ = match service.verify_password(&body).await {
+        Ok(true) => true,//Ok(HttpResponse::Ok().json(ResponseBody::new("User logged in", constants::EMPTY))),
+        Ok(false) => return Ok(HttpResponse::Ok().json(ResponseBody::new("Invalid username or password", constants::EMPTY))),
+        Err(err) => return Err(err),
+    };
+    let token = token_util::generate_jwt(&body.email)?;
 
     Ok(HttpResponse::Ok().json(ResponseBody::new("Successful Login", LoginRes{access_token: token})))
 
@@ -57,4 +59,3 @@ fn logout(claims: GoogleClaims) -> HttpResponse {
 fn auth(claims: Claims) -> HttpResponse {
     HttpResponse::Ok().json(ResponseBody::new("success", claims.sub))
 }
-

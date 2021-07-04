@@ -581,6 +581,7 @@ dependencies = [
  "actix-web-httpauth",
  "argon2",
  "async-trait",
+ "chrono",
  "derive_more",
  "elasticsearch",
  "futures-util",
