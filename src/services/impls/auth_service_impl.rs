@@ -1,9 +1,10 @@
 use crate::{
-    models::user::*,
     models::auth::*,
+    models::user::User,
     models::error::ServiceError,
-    repositories::credential_repo_i::*,
-    services::auth_service_i::*,
+    repositories::credential_repo_i::CredentialRepo,
+    repositories::user_repo_i::UserRepo,
+    services::auth_service_i::AuthService,
     utils::constants::{NATIVE_AUTH_TYPE},
 };
 use async_trait::async_trait;
@@ -11,16 +12,16 @@ use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2
 };
-use std::sync::Arc;
 use rand_core::OsRng;
 
-pub struct AuthServiceImpl <'a, C: CredentialRepo>{
+pub struct AuthServiceImpl <'a, C: CredentialRepo, U: UserRepo>{
     pub credential_repo: C,
+    pub user_repo: U,
     pub argon2: Argon2<'a>
 }
 
 #[async_trait]
-impl <'a, C>AuthService for AuthServiceImpl<'a, C> where C: CredentialRepo + Sync + Send{
+impl <'a, C, U>AuthService for AuthServiceImpl<'a, C, U> where C: CredentialRepo + Sync + Send, U: UserRepo + Sync + Send{
     
     async fn register(self: &Self, req: &RegistrationReq, auth_type: &str) -> Result<(), ServiceError> {
         let salt = SaltString::generate(&mut OsRng);
@@ -37,7 +38,8 @@ impl <'a, C>AuthService for AuthServiceImpl<'a, C> where C: CredentialRepo + Syn
             hashed_password: password_hash,
             auth_type: auth_type.to_string(),
         };
-        return self.credential_repo.save_credential(&credential).await;
+        let _id = self.credential_repo.create_credential(&credential).await?;
+        return self.user_repo.create_user(&_id, &req.username).await;
     }
 
     async fn verify_password(self: &Self, req: &LoginReq) -> Result<String, ServiceError> {
@@ -50,10 +52,5 @@ impl <'a, C>AuthService for AuthServiceImpl<'a, C> where C: CredentialRepo + Syn
             true => Ok(credential._id),
             false => Err(ServiceError::UnauthorizedError("Incorrect username or password".to_string()))
         }
-    }
-
-    async fn authenticate(self: &Self, token: &Token) -> Option<String> {
-        // self.token_repo.get_username_by_token(token).await
-        return None;
     }
 }

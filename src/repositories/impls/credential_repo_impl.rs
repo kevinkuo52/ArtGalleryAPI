@@ -1,6 +1,6 @@
 
+use crate::configs::var::{CREDENTIAL_INDEX};
 use elasticsearch::{Elasticsearch, IndexParts, SearchParts};
-
 use async_trait::async_trait;
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -8,16 +8,10 @@ use crate::repositories::credential_repo_i::CredentialRepo;
 use crate::models::{
     auth::{
         Credential,
-        CredentialES
     },
     elastic_res::{SearchResES, DocES}
 };
 use crate::models::error::ServiceError;
-use actix_web::{
-    http::{
-        StatusCode,
-    },
-};
 
 pub struct CredentialRepoImpl {
     pub elastic_client: Arc<Elasticsearch>
@@ -27,25 +21,31 @@ pub struct CredentialRepoImpl {
 impl CredentialRepo for CredentialRepoImpl {
 
 
-    async fn save_credential(self: &Self, credential: &Credential) -> Result<(), ServiceError> {
+    async fn create_credential(self: &Self, credential: &Credential) -> Result<String, ServiceError> {
+        /* create credentail
+        return _id of the created credential doc
+        */
         let result = self.elastic_client
-            .index(IndexParts::Index("credential"))
+            .index(IndexParts::Index(CREDENTIAL_INDEX))
             .body(json!(credential))
             .send()
             .await;
-        let res_status = match result {
-            Ok(response) => response.status_code().is_success(),
+        let response = match result {
+            Ok(res) => res,
             Err(error) => return Err(ServiceError::InternalServerError(error.to_string())),
         };
-        match res_status {
-            true => Ok(()),
-        false => Err(ServiceError::InternalServerError("ES error saving credentials".to_string()))
+        if !response.status_code().is_success() {
+            return Err(ServiceError::InternalServerError("ES http error saving credentials".to_string()))
+        }
+        match response.json::<Value>().await {
+            Ok(res) => Ok(res["_id"].as_str().unwrap().to_string()),
+            Err(err) =>  Err(ServiceError::InternalServerError("ES error deserializing create credential response: ".to_string()))
         }
     }
 
     async fn get_credential(self: &Self, email: &String) -> Result<DocES<Credential>, ServiceError> {
          let result = self.elastic_client
-            .search(SearchParts::Index(&["credential"]))
+            .search(SearchParts::Index(&[CREDENTIAL_INDEX]))
             .body(json!({
                 "query": {
                     "term": {
