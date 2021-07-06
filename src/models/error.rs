@@ -1,7 +1,6 @@
 use crate::models::response::ResponseBody;
 use actix_web::{
     HttpResponse,
-    http::StatusCode,
     error::ResponseError
 };
 
@@ -38,8 +37,8 @@ pub enum ServiceError {
     #[display(fmt = "BadRequest: {}", _0)]
     BadRequest(String),
 
-    #[display(fmt = "JWKSFetchError")]
-    JWKSFetchError,
+    // #[display(fmt = "JWKSFetchError")]
+    // JWKSFetchError,
 
     #[display(fmt = "JWTExpireError")]
     JWTExpireError,
@@ -61,9 +60,9 @@ impl ResponseError for ServiceError {
             ServiceError::BadRequest(ref message) =>{
                 HttpResponse::BadRequest().json(ResponseBody{message: message.to_string(), data: ""})
             }
-            ServiceError::JWKSFetchError => {
-                HttpResponse::InternalServerError().json(ResponseBody{message: "Error fetching JWKS".to_string(), data: ""})
-            }
+            // ServiceError::JWKSFetchError => {
+            //     HttpResponse::InternalServerError().json(ResponseBody{message: "Error fetching JWKS".to_string(), data: ""})
+            // }
             ServiceError::JWTExpireError => {
                 HttpResponse::Unauthorized().json(ResponseBody{message: "ExpiredJWT".to_string(), data: ""})
             }

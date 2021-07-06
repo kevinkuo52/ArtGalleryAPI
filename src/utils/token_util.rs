@@ -2,13 +2,8 @@ use crate::models::{
     token::{Claims, GoogleClaims, JWKS},
     error::ServiceError,
 };
-use actix_web::{
-    http::{
-        StatusCode,
-    },
-};
 use reqwest;
-use chrono::{Duration, TimeZone, Utc};
+use chrono::{Utc};
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{decode, decode_header, encode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use std::error::Error;
@@ -21,7 +16,7 @@ fn fetch_jwks(uri: &str) -> Result<JWKS, Box<dyn Error>> {
     return Ok(val);
 }
 pub fn validate_google_id_token(token: &str) -> Result<GoogleClaims, ServiceError>{
-    if (token.is_empty()){
+    if token.is_empty(){
         return Err(ServiceError::UnauthorizedError("id_token string empty".to_string()))
     }
     let header = match decode_header(&token){

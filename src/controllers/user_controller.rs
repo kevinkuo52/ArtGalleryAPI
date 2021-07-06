@@ -1,18 +1,12 @@
-use crate::services::auth_service_i::*;
+use crate::repositories::user_repo_i::UserRepo;
 use crate::utils::{constants, token_util};
 use crate::models::{
-    auth::{
-        RegistrationReq,
-        RegistrationRes,
-        Credential,
-        LoginReq,
-        LoginRes,
+    user::{
+        User,
     },
     token::{
         Claims,
-        GoogleClaims
     },
-    app_state::AppState,
     response::ResponseBody,
     error::ServiceError,
 };
@@ -24,38 +18,25 @@ use actix_web::http::header;
 use actix_web::{web, Responder, HttpResponse, Result};
 use actix_web::web::Json;
 
-pub fn configure<T: 'static + AuthService>(service: web::Data<T>, cfg: &mut web::ServiceConfig) {
-    cfg.app_data(service);
-    cfg.route("/user", web::get().to(register::<T>));
-    cfg.route("/user", web::post().to(login::<T>));
+pub fn configure<T: 'static + UserRepo>(user_repo: web::Data<T>, cfg: &mut web::ServiceConfig) {
+    cfg.app_data(user_repo);
+    // cfg.route("/user", web::get().to(register::<T>));
+    cfg.route("/user", web::get().to(get_user::<T>));
 }
 
-async fn register<T: AuthService>(service: web::Data<T>, body: Json<RegistrationReq>) -> Result<HttpResponse, ServiceError>  {
+// async fn register<T: UserRepo>(user_repo: web::Data<T>, body: Json<RegistrationReq>) -> Result<HttpResponse, ServiceError>  {
     
-    match service.register(&body, constants::NATIVE_AUTH_TYPE).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(ResponseBody::new("User created", constants::EMPTY))),
+//     match service.register(&body, constants::NATIVE_AUTH_TYPE).await {
+//         Ok(_) => Ok(HttpResponse::Ok().json(ResponseBody::new("User created", constants::EMPTY))),
+//         Err(err) => Err(err),
+//     }
+// }
+
+async fn get_user<T: UserRepo>(user_repo: web::Data<T>, claims: Claims) -> Result<HttpResponse, ServiceError> {
+    // session.set("login", true).unwrap();
+    // HttpResponse::Ok().json(ResponseBody::new("res", constants::EMPTY))
+    match user_repo.get_user(&claims.sub).await {
+        Ok(user) => Ok(HttpResponse::Ok().json(ResponseBody::new("", user._source))),
         Err(err) => Err(err),
     }
-}
-
-async fn login<T: AuthService>(service: web::Data<T>, body: Json<LoginReq>) -> Result<HttpResponse, ServiceError> {
-    // session.set("login", true).unwrap();
-    let _ = match service.verify_password(&body).await {
-        Ok(true) => true,//Ok(HttpResponse::Ok().json(ResponseBody::new("User logged in", constants::EMPTY))),
-        Ok(false) => return Ok(HttpResponse::Ok().json(ResponseBody::new("Invalid username or password", constants::EMPTY))),
-        Err(err) => return Err(err),
-    };
-    let token = token_util::generate_jwt(&body.email)?;
-
-    Ok(HttpResponse::Ok().json(ResponseBody::new("Successful Login", LoginRes{access_token: token})))
-
-}
-
-fn logout(claims: GoogleClaims) -> HttpResponse {
-
-    HttpResponse::Ok().json(ResponseBody::new("success", claims))
-}
-
-fn auth(claims: Claims) -> HttpResponse {
-    HttpResponse::Ok().json(ResponseBody::new("success", claims.sub))
 }

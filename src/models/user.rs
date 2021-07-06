@@ -1,16 +1,13 @@
 use serde::{Serialize, Deserialize};
 
-// #[derive(Deserialize)]
-// pub struct AuthReq {
-//     pub code: String,
-//     pub state: String,
-//     pub scope: String,
-// }
 #[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct User {
-    pub email: String,
     pub username: String,
-    
+    pub art_works: Vec<String>,
+    pub description: String,
+    pub liked_art_works: Vec<String>,
+    pub followers: Vec<String>,
+    pub following: Vec<String>,
 }
 
 

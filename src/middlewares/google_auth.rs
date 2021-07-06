@@ -2,14 +2,9 @@ use crate::utils::token_util;
 use crate::utils::constants;
 use crate::models::token::GoogleClaims;
 use crate::models::error::ServiceError;
-use actix_web::error::ErrorUnauthorized;
 use actix_web::{dev, Error, FromRequest, HttpRequest};
 use futures_util::future::{ok, err, Ready};
-use actix_web::{
-    http::{
-        StatusCode,
-    },
-};
+
 
 impl FromRequest for GoogleClaims {
     type Error = Error;

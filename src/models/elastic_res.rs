@@ -1,10 +1,7 @@
 use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct DocES <T>{
-    pub _index: String,
-    pub _type: String,
     pub _id: String,
-    pub _score: f32,
     pub _source: T, 
 }
 
@@ -22,7 +19,6 @@ pub struct Hits <T>{
 pub struct SearchResES<T>{
     pub hits: Hits<T>,
 }
-
 
 
 

@@ -3,8 +3,6 @@ use crate::utils::{constants, token_util};
 use crate::models::{
     auth::{
         RegistrationReq,
-        RegistrationRes,
-        Credential,
         LoginReq,
         LoginRes,
     },
@@ -12,16 +10,12 @@ use crate::models::{
         Claims,
         GoogleClaims
     },
-    app_state::AppState,
     response::ResponseBody,
     error::ServiceError,
 };
 // use actix_session::{CookieSession, Session};
-use oauth2::{
-    AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope,
-};
-use actix_web::http::header;
-use actix_web::{web, Responder, HttpResponse, Result};
+
+use actix_web::{web, HttpResponse, Result};
 use actix_web::web::Json;
 
 pub fn configure<T: 'static + AuthService>(service: web::Data<T>, cfg: &mut web::ServiceConfig) {
