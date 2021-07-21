@@ -20,5 +20,11 @@ pub struct SearchResES<T>{
     pub hits: Hits<T>,
 }
 
+#[derive(Deserialize, PartialEq, Debug, Clone)]
+pub struct IndexResES{
+    pub _id: String,
+}
+
+
 
 

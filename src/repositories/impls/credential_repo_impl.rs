@@ -2,14 +2,14 @@
 use crate::configs::var::{CREDENTIAL_INDEX};
 use elasticsearch::{Elasticsearch, IndexParts, SearchParts};
 use async_trait::async_trait;
-use serde_json::{json, Value};
+use serde_json::{json};
 use std::sync::Arc;
 use crate::repositories::credential_repo_i::CredentialRepo;
 use crate::models::{
     auth::{
         Credential,
     },
-    elastic_res::{SearchResES, DocES}
+    elastic_res::{SearchResES, DocES, IndexResES}
 };
 use crate::models::error::ServiceError;
 
@@ -37,9 +37,10 @@ impl CredentialRepo for CredentialRepoImpl {
         if !response.status_code().is_success() {
             return Err(ServiceError::InternalServerError("ES http error saving credentials".to_string()))
         }
-        match response.json::<Value>().await {
-            Ok(res) => Ok(res["_id"].as_str().unwrap().to_string()),
-            Err(err) =>  Err(ServiceError::InternalServerError("ES error deserializing create credential response: ".to_string()))
+        match response.json::<IndexResES>().await {
+            Ok(res) => Ok(res._id),
+            // Ok(res) => Ok(res["_id"].as_str().unwrap().to_string()),
+            Err(err) =>  Err(ServiceError::InternalServerError("ES error deserializing create credential response: ".to_string() + &err.to_string()))
         }
     }
 

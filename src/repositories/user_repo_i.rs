@@ -9,4 +9,5 @@ use crate::models::error::ServiceError;
 pub trait UserRepo  {
     async fn create_user(&self, id: &String, username: &String) -> Result<(), ServiceError>;
     async fn get_user(self: &Self, id: &String) -> Result<DocES<User>, ServiceError>;
+    async fn add_artwork(self: &Self, user_id: &String, artwork_id: &String) -> Result<(), ServiceError>;
 }

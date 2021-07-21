@@ -12,3 +12,4 @@ pub const JWT_KEY: &[u8] = env!("JWT_KEY").as_bytes();
 
 pub const USER_INDEX: &str = "user";
 pub const CREDENTIAL_INDEX: &str = "credential";
+pub const ARTWORK_INDEX: &str = "artwork";

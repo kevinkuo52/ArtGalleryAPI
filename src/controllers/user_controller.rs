@@ -1,22 +1,13 @@
 use crate::repositories::user_repo_i::UserRepo;
-use crate::utils::{constants, token_util};
 use crate::models::{
-    user::{
-        User,
-    },
     token::{
         Claims,
     },
     response::ResponseBody,
     error::ServiceError,
 };
-// use actix_session::{CookieSession, Session};
-use oauth2::{
-    AuthorizationCode, CsrfToken, PkceCodeChallenge, Scope,
-};
-use actix_web::http::header;
-use actix_web::{web, Responder, HttpResponse, Result};
-use actix_web::web::Json;
+
+use actix_web::{web, HttpResponse, Result};
 
 pub fn configure<T: 'static + UserRepo>(user_repo: web::Data<T>, cfg: &mut web::ServiceConfig) {
     cfg.app_data(user_repo);

@@ -1,6 +1,5 @@
 use crate::{
     models::auth::*,
-    models::user::User,
     models::error::ServiceError,
     repositories::credential_repo_i::CredentialRepo,
     repositories::user_repo_i::UserRepo,

@@ -5,3 +5,4 @@ pub mod app_state;
 pub mod auth;
 pub mod token;
 pub mod elastic_res;
+pub mod artwork;

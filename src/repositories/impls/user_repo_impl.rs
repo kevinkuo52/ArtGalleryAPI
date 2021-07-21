@@ -1,5 +1,5 @@
 use crate::configs::var::{USER_INDEX};
-use elasticsearch::{Elasticsearch, IndexParts, GetParts};
+use elasticsearch::{Elasticsearch, IndexParts, GetParts, UpdateParts};
 use async_trait::async_trait;
 use serde_json::{json};
 use std::sync::Arc;
@@ -23,9 +23,9 @@ impl UserRepo for UserRepoImpl {
     async fn create_user(self: &Self, id: &String, username: &String) -> Result<(), ServiceError> {
         let user = User{
             username: username.to_string(),
-            art_works: Vec::new(),
+            artworks: Vec::new(),
             description: "".to_string(),
-            liked_art_works: Vec::new(),
+            liked_artworks: Vec::new(),
             followers: Vec::new(),
             following: Vec::new(),
         };
@@ -40,12 +40,12 @@ impl UserRepo for UserRepoImpl {
         };
         match res_status {
             true => Ok(()),
-            false => Err(ServiceError::InternalServerError("ES error creating user".to_string()))
+            false => Err(ServiceError::InternalServerError("ES create user http status err".to_string()))
         }
     }
 
     async fn get_user(self: &Self, id: &String) -> Result<DocES<User>, ServiceError> {
-         let response = match self.elastic_client
+        let response = match self.elastic_client
             .get(GetParts::IndexId(USER_INDEX, id))
             .send()
             .await {
@@ -63,4 +63,27 @@ impl UserRepo for UserRepoImpl {
         }
     }
 
+    async fn add_artwork(self: &Self, user_id: &String, artwork_id: &String) -> Result<(), ServiceError> {
+        let result = self.elastic_client
+            .update(UpdateParts::IndexParts(USER_INDEX, user_id))
+            .body(json!({
+                    "script": {
+                        "source": "ctx._source.artworks.add(params.artwork)",
+                        "lang": "painless",
+                        "params": {
+                            "artwork": artwork_id
+                        }
+                    }
+                }))
+            .send()
+            .await;
+        let res_status = match result {
+            Ok(response) => response.status_code().is_success(),
+            Err(error) => return Err(ServiceError::InternalServerError("ES user add artwork err: ".to_string() + &error.to_string())),
+        };
+        match res_status {
+            true => Ok(()),
+            false => Err(ServiceError::InternalServerError("ES user add artwork http status err".to_string()))
+        }
+    }
 }
