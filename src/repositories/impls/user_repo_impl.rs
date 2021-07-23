@@ -65,7 +65,7 @@ impl UserRepo for UserRepoImpl {
 
     async fn add_artwork(self: &Self, user_id: &String, artwork_id: &String) -> Result<(), ServiceError> {
         let result = self.elastic_client
-            .update(UpdateParts::IndexParts(USER_INDEX, user_id))
+            .update(UpdateParts::IndexId(USER_INDEX, user_id))
             .body(json!({
                     "script": {
                         "source": "ctx._source.artworks.add(params.artwork)",

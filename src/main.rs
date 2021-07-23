@@ -40,6 +40,7 @@ async fn main() -> std::io::Result<()> {
                 // .wrap(google_auth)
                 .configure(|cfg| configure_auth(elastic_client.clone(), cfg))
                 .configure(|cfg| configure_user(elastic_client.clone(), cfg))
+                .configure(|cfg| configure_artwork(elastic_client.clone(), cfg))
                 .service(api)
         })
         .bind("127.0.0.1:8080")?
@@ -63,6 +64,7 @@ fn configure_auth(elastic_client: Arc<Elasticsearch>, cfg: &mut web::ServiceConf
     };
     auth_controller::configure(web::Data::new(service), cfg);
 }
+
 fn configure_user(elastic_client: Arc<Elasticsearch>, cfg: &mut web::ServiceConfig){
     use crate::controllers::user_controller;
     use crate::repositories::impls::user_repo_impl::UserRepoImpl;
@@ -70,4 +72,17 @@ fn configure_user(elastic_client: Arc<Elasticsearch>, cfg: &mut web::ServiceConf
         elastic_client: elastic_client.clone()
     };
     user_controller::configure(web::Data::new(repo), cfg);
+}
+
+fn configure_artwork(elastic_client: Arc<Elasticsearch>, cfg: &mut web::ServiceConfig){
+    use crate::controllers::artwork_controller;
+    use crate::repositories::impls::artwork_repo_impl::ArtworkRepoImpl;
+    use crate::repositories::impls::user_repo_impl::UserRepoImpl;
+    let artwork_repo = ArtworkRepoImpl {
+        elastic_client: elastic_client.clone()
+    };
+    let user_repo = UserRepoImpl {
+        elastic_client: elastic_client.clone()
+    };
+    artwork_controller::configure(web::Data::new(artwork_repo), web::Data::new(user_repo), cfg);
 }
